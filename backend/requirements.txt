@@ -4,3 +4,4 @@ fastAPI
 uvicorn 
 python-multipart
 tf_keras
+chromadb

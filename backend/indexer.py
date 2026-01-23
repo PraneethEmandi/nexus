@@ -4,7 +4,7 @@ from deepface import DeepFace #type: ignore
 
 # --- CONFIGURATION ---
 PHOTO_FOLDER = "./photos"
-DB_PATH = "./my_local_db_arcFacw"  # Chroma will create this folder
+DB_PATH = "./my_local_db_retinaFace"  # Chroma will create this folder
 
 # 1. Initialize ChromaDB (Persistent means it saves to disk)
 client = chromadb.PersistentClient(path=DB_PATH)
