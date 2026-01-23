@@ -1,0 +1,31 @@
+# --- OS & System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Python (Backend) ---
+__pycache__/
+*.pyc
+venv/
+.env
+.venv/
+
+# --- Node/Next.js (Frontend) ---
+node_modules/
+.next/
+dist/
+out/
+build/
+.env.local
+
+# --- YOUR DATA (Crucial) ---
+# Ignore the actual photos
+**/photos/*
+# !But keep the folder itself so the code doesn't break
+!**/photos/.gitkeep
+
+# Ignore the database folder
+**/my_local_db*/
+
+# Ignore temp uploads
+**/uploads/*
+!**/uploads/.gitkeep

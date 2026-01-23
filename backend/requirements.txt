@@ -1,0 +1,6 @@
+deepface 
+pinecone-client 
+fastAPI 
+uvicorn 
+python-multipart
+tf_keras
