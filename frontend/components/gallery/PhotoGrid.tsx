@@ -1,10 +1,15 @@
 import React from "react";
 import Image from "next/image";
 
-interface PhotoGridProps {
-  photos: string[];
+
+interface PhotoMatch {
+  url: string;
+  distance: number;
 }
 
+interface PhotoGridProps {
+  photos: PhotoMatch[];
+}
 export const PhotoGrid = ({ photos }: PhotoGridProps) => {
   if (photos.length === 0) return null;
 
@@ -14,10 +19,10 @@ export const PhotoGrid = ({ photos }: PhotoGridProps) => {
         Found {photos.length} Photos
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {photos.map((src, idx) => (
+        {photos.map((photo, idx) => (
           <div key={idx} className="relative aspect-[3/4] group overflow-hidden rounded-lg shadow-md">
             <Image
-              src={src}
+              src={photo.url}
               alt={`Found photo ${idx}`}
               fill
               unoptimized={true}
@@ -26,13 +31,17 @@ export const PhotoGrid = ({ photos }: PhotoGridProps) => {
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <a 
-                href={src} 
+                href={photo.url} 
                 download 
                 target="_blank"
                 className="bg-white text-gray-900 px-4 py-2 rounded-full text-sm font-bold"
               >
                 Download
               </a>
+            </div>
+            {/* Optionally show distance */}
+            <div className="absolute bottom-2 right-2 bg-white/80 text-xs px-2 py-1 rounded">
+              Distance: {photo.distance.toFixed(2)}
             </div>
           </div>
         ))}

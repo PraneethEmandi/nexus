@@ -6,5 +6,9 @@ class DownloadRequest(BaseModel):
     file_paths: List[str]
 
 # Response Model for Search
+class MatchResult(BaseModel):
+    url: str
+    distance: float
+
 class SearchResponse(BaseModel):
-    matches: List[str]
+    matches: List[MatchResult]
