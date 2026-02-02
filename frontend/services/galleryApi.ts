@@ -1,18 +1,17 @@
+
 import { SearchResponse } from "@/types";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
-// CHANGED: Input is now File[]
-export const searchPhotos = async (files: File[]): Promise<SearchResponse> => {
-  if (!files || files.length === 0) {
-    console.error("No files selected for upload.");
-    return { matches: [], error: "No files selected for upload." };
+// Input is now a single File
+export const searchPhotos = async (file: File): Promise<SearchResponse> => {
+  if (!file) {
+    console.error("No file selected for upload.");
+    return { matches: [], error: "No file selected for upload." };
   }
 
   const formData = new FormData();
-  files.forEach((file) => {
-    formData.append("files", file);
-  });
+  formData.append("file", file);
 
   // Debug: Log FormData keys and values
   for (const pair of formData.entries()) {
@@ -34,8 +33,9 @@ export const searchPhotos = async (files: File[]): Promise<SearchResponse> => {
     }
 
     if (!response.ok) {
-      console.error("Backend error response:", data);
-      throw new Error((data && data.detail) || "Failed to fetch photos");
+      // Extract error message from backend (FastAPI sends {detail: ...})
+      const errorMessage = (data && data.detail) ? data.detail : "Failed to fetch photos";
+      return { matches: [], error: errorMessage };
     }
 
     const matches = (data && data.matches ? data.matches : []).map((match: any) => {
@@ -50,6 +50,6 @@ export const searchPhotos = async (files: File[]): Promise<SearchResponse> => {
     return { matches };
   } catch (error: any) {
     console.error("API Error:", error);
-    return { matches: [], error: error.message || "Failed to connect to server." };
+    return { matches: [], error: "Failed to connect to server." };
   }
 };

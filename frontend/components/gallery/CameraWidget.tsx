@@ -1,16 +1,18 @@
 import React, { useRef, useState, useEffect } from "react";
 
+
 interface CameraWidgetProps {
-  onCapture: (files: File[]) => void;
+  onCapture: (file: File) => void;
   loading: boolean;
+  error?: string;
 }
 
 
-export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
+export const CameraWidget = ({ onCapture, loading, error }: CameraWidgetProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [capturing, setCapturing] = useState(false);
   const [count, setCount] = useState(0);
   const [cameraOn, setCameraOn] = useState(false);
@@ -21,6 +23,11 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
       videoRef.current.srcObject = stream;
     }
   }, [cameraOn, stream]);
+
+  // Sync error from parent
+  useEffect(() => {
+    setLocalError(error || "");
+  }, [error]);
   
   const startCamera = async () => {
     try {
@@ -29,12 +36,12 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
       });
       setStream(mediaStream);
       setCameraOn(true);
-      setError("");
+      setLocalError("");
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
     } catch (err) {
-      setError("Camera access denied. Please allow permissions.");
+      setLocalError("Camera access denied. Please allow permissions.");
       setCameraOn(false);
       console.error(err);
     }
@@ -48,48 +55,38 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
     setCameraOn(false);
   };
 
-  // 2. The Burst Capture Logic
-  const handleBurstCapture = async () => {
+
+  // Single Capture Logic
+  const handleCapture = async () => {
     if (!videoRef.current || !canvasRef.current) return;
-
     setCapturing(true);
-    const capturedFiles: File[] = [];
-    const TOTAL_FRAMES = 1;
-
-    // We take 3 photos with a 200ms delay between them
-    for (let i = 0; i < TOTAL_FRAMES; i++) {
-      setCount(i + 1); // Update UI counter
-      // Draw video frame to canvas
-      const context = canvasRef.current.getContext("2d");
-      if (context) {
-        context.drawImage(videoRef.current, 0, 0, 640, 480);
-        // Convert canvas to Blob -> File
-        const blob = await new Promise<Blob | null>(resolve => 
-          canvasRef.current?.toBlob(resolve, "image/jpeg")
-        );
-        if (blob) {
-          const file = new File([blob], `burst_frame_${i}.jpg`, { type: "image/jpeg" });
-          capturedFiles.push(file);
-        }
+    setCount(1);
+    const context = canvasRef.current.getContext("2d");
+    let capturedFile: File | null = null;
+    if (context) {
+      context.drawImage(videoRef.current, 0, 0, 640, 480);
+      const blob = await new Promise<Blob | null>(resolve =>
+        canvasRef.current?.toBlob(resolve, "image/jpeg")
+      );
+      if (blob) {
+        capturedFile = new File([blob], `photo.jpg`, { type: "image/jpeg" });
       }
-      // Wait 200ms before next shot (Simulates movement capture)
-      await new Promise(r => setTimeout(r, 200));
     }
-
     setCapturing(false);
     setCount(0);
-    stopCamera(); // Stop camera after capture
-    console.log("Captured files:", capturedFiles);
-    // Send all 3 files to the parent
-    onCapture(capturedFiles);
+    stopCamera();
+    if (capturedFile) {
+      console.log("Captured file:", capturedFile);
+      onCapture(capturedFile);
+    }
   };
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-lg max-w-md mx-auto border border-gray-200">
-      {error && (
-        <div className="text-red-500 py-8">{error} <br/> <button onClick={startCamera} className="text-blue-500 underline mt-2">Try Again</button></div>
+      {localError && !cameraOn && (
+        <div className="text-red-500 py-8">{localError} <br/> <button onClick={startCamera} className="text-blue-500 underline mt-2">Try Again</button></div>
       )}
-      {!cameraOn && !error && (
+      {!cameraOn && !localError && (
         <button
           onClick={startCamera}
           disabled={loading}
@@ -102,7 +99,7 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
           {loading ? "Analyzing..." : "📷 Open Camera"}
         </button>
       )}
-      {cameraOn && !error && (
+      {cameraOn && (
         <>
           {/* Live Video Feed */}
           <div className="relative rounded-lg overflow-hidden bg-black aspect-4/3 mb-4">
@@ -113,8 +110,10 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
               className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
             />
             {/* Overlay Grid for Alignment */}
-            <div className="absolute inset-0 border-2 border-white/30 pointer-events-none flex items-center justify-center">
-              <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-full opacity-70"></div>
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div
+                className={`w-48 h-64 border-2 border-dashed rounded-full opacity-70 ${localError ? 'border-red-500' : 'border-white/50'}`}
+              ></div>
             </div>
             {/* Countdown Overlay */}
             {capturing && (
@@ -122,12 +121,18 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
                 <span className="text-white text-6xl font-bold">{count}/1</span>
               </div>
             )}
+            {/* Error Banner (bottom of video area) */}
+            {localError && (
+              <div className="absolute bottom-0 left-0 w-full py-2 px-4 bg-red-600/80 text-white text-center text-sm font-semibold z-20 rounded-b-lg">
+                {localError}
+              </div>
+            )}
           </div>
           {/* Hidden Canvas for processing */}
           <canvas ref={canvasRef} width="640" height="480" className="hidden" />
           {/* Controls */}
           <button
-            onClick={handleBurstCapture}
+            onClick={handleCapture}
             disabled={capturing || loading}
             className={`w-full py-4 rounded-lg font-bold text-white transition-all transform active:scale-95
               ${capturing 
@@ -137,10 +142,10 @@ export const CameraWidget = ({ onCapture, loading }: CameraWidgetProps) => {
                   : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200 shadow-lg'
               }`}
           >
-            {capturing ? "Scanning Face..." : loading ? "Analyzing..." : "📸 Scan Face"}
+            {capturing ? "Taking Photo..." : loading ? "Analyzing..." : "📸 Take Photo"}
           </button>
           <p className="text-xs text-center text-gray-400 mt-3">
-            Position your face in the oval and click Scan.
+            Position your face in the oval and click Take Photo.
           </p>
         </>
       )}

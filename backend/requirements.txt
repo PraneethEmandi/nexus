@@ -5,3 +5,4 @@ python-multipart
 tf_keras
 chromadb
 numpy
+opencv-python
