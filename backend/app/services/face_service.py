@@ -6,7 +6,7 @@ import cv2
 from typing import BinaryIO
 from deepface import DeepFace #type: ignore
 from app.core.database import get_db_collection, UPLOAD_DIR
-from app.core.face_models import MODELS, BACKENDS, METRICS
+from app.core.face_models import MODELS, BACKENDS
 
 
 # Helper: L2 Normalization

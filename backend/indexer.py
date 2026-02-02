@@ -3,9 +3,10 @@ import os
 import chromadb
 from deepface import DeepFace #type: ignore
 from app.core.database import PHOTO_DIR, DB_PATH
-from app.core.face_models import MODELS, BACKENDS, METRICS
+from app.core.face_models import MODELS, BACKENDS
 import cv2
-import numpy as np
+# import numpy as np
+
 # Option to save images with detected faces
 SAVE_DETECTED_FACES = False  # Set to False to disable saving
 
@@ -35,9 +36,10 @@ def index_photos():
                 img_path=img_path,
                 model_name=MODELS[6],  # Using ArcFace
                 detector_backend=BACKENDS[5],  # Using RetinaFace
-                
-                enforce_detection=False
+                enforce_detection=False,
+                align=True
             )
+
 
             # Prepare data for Chroma
             ids = []
